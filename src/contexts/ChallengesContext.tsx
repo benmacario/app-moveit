@@ -1,4 +1,5 @@
 import { createContext, ReactNode, useEffect, useState } from 'react';
+import Cookies from 'js-cookie';
 import challenges from '../../challenges.json';
 
 interface Challenge {
@@ -10,7 +11,7 @@ interface Challenge {
 interface ChallengeContextDate {
   level: number;
   currentExperience: number;
-  challengesComplited: number;
+  challengesCompleted: number;
   activeChallenge: Challenge;
   experienceToNextLevel: number;
   levelUp: () => void;
@@ -21,14 +22,17 @@ interface ChallengeContextDate {
 
 interface ChallengesProviderProps {
   children: ReactNode;
+  level: number;
+  currentExperience: number;
+  challengesCompleted: number;
 }
 
 export const ChallengesContext = createContext({} as ChallengeContextDate);
 
-export function ChallengesProvider({ children }: ChallengesProviderProps) {
-  const [level, setLevel] = useState(1);
-  const [currentExperience, setCurrenteExperience] = useState(0);
-  const [challengesComplited, setChallengesComplited] = useState(0);
+export function ChallengesProvider({ children, ...rest }: ChallengesProviderProps) {
+  const [level, setLevel] = useState(rest.level ?? 1);
+  const [currentExperience, setCurrenteExperience] = useState(rest.currentExperience ?? 0);
+  const [challengesCompleted, setChallengesComplited] = useState(rest.challengesCompleted ?? 0);
 
   const [activeChallenge, setActiveChallenge] = useState(null);
 
@@ -36,7 +40,13 @@ export function ChallengesProvider({ children }: ChallengesProviderProps) {
 
   useEffect(() => {
     Notification.requestPermission();
-  }, [])
+  }, []);
+
+  useEffect(() => {
+    Cookies.set('level', level.toString());
+    Cookies.set('currentExperience', currentExperience.toString());
+    Cookies.set('challengesComplited', challengesCompleted.toString());
+  }, [level, currentExperience, challengesCompleted])
 
   function levelUp() {
     setLevel(level + 1);
@@ -52,7 +62,8 @@ export function ChallengesProvider({ children }: ChallengesProviderProps) {
 
     if(Notification.permission === 'granted') {
       new Notification('Novo desafio!', {
-        body: `Valendo ${challenge.amount}xp`
+        body: `Valendo ${challenge.amount}xp`,
+        icon: '/favicon.png'
       });
     }
   }
@@ -77,7 +88,7 @@ export function ChallengesProvider({ children }: ChallengesProviderProps) {
 
     setCurrenteExperience(finalExperience);
     setActiveChallenge(null);
-    setChallengesComplited(challengesComplited + 1);
+    setChallengesComplited(challengesCompleted + 1);
 
   }
 
@@ -87,7 +98,7 @@ export function ChallengesProvider({ children }: ChallengesProviderProps) {
       {{
         level,
         currentExperience,
-        challengesComplited,
+        challengesCompleted,
         activeChallenge,
         experienceToNextLevel,
         levelUp,
